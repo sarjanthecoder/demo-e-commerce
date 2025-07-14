@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment</title>
+  <script>
+    function showPlaceOrder(paymentMethod) {
+      localStorage.setItem("paymentMethod", paymentMethod);
+
+      // Clear all previous selections
+      document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+
+      // Highlight current selection
+      document.getElementById(paymentMethod).classList.add('selected');
+
+      // Update display text
+      document.getElementById("selected-method").innerText = `Selected: ${paymentMethod}`;
+
+      // Show the Place Order button
+      document.getElementById("place-order").style.display = "block";
+    }
+
+    function placeOrder() {
+      const paymentMethod = localStorage.getItem("paymentMethod");
+      const address = JSON.parse(localStorage.getItem("userAddress"));
+      const product = JSON.parse(localStorage.getItem("selectedProduct"));
+
+      if (address && product) {
+        let orders = JSON.parse(localStorage.getItem("orders")) || [];
+
+        orders.push({
+          orderId: `ORD${Date.now()}`,
+          name: product.name,
+          price: product.price,
+          quantity: product.quantity || 1,
+          image: product.image,
+          paymentMethod: paymentMethod,
+          address: address
+        });
+
+        localStorage.setItem("orders", JSON.stringify(orders));
+
+        alert(`Order Placed Successfully!\nPayment: ${paymentMethod}\nProduct: ${product.name}`);
+
+        playOrderAnimation();
+      } else {
+        alert("Missing information. Please start over.");
+      }
+    }
+
+    function playOrderAnimation() {
+      const animationDiv = document.getElementById("order-animation");
+      animationDiv.style.display = "flex";
+
+      setTimeout(() => {
+        animationDiv.style.display = "none";
+        location.href = "index.html";
+      }, 3000);
+    }
+  </script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #87cefa, #e0f7ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 0 25px rgba(135, 206, 250, 0.6);
+      border: 1px solid rgba(135, 206, 250, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #00bfff;
+      margin-bottom: 20px;
+      font-size: 26px;
+    }
+
+    .payment-option {
+      background: rgba(0, 191, 255, 0.1);
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 15px 20px;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      color: #000;
+    }
+
+    .payment-option:hover {
+      background: rgba(0, 191, 255, 0.2);
+    }
+
+    .payment-option.selected {
+      border: 2px solid #00bfff;
+      box-shadow: 0 0 12px #00d4ff;
+      background: rgba(0, 191, 255, 0.2);
+    }
+
+    .payment-option.selected::after {
+      content: "✓";
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #00bfff;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #selected-method {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+      color: #0077aa;
+    }
+
+    #place-order {
+      display: none;
+      width: 100%;
+      margin-top: 20px;
+      background: #ff5722;
+      color: white;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 87, 34, 0.6);
+      transition: background 0.3s ease;
+    }
+
+    #place-order:hover {
+      background: #e64a19;
+      box-shadow: 0 0 12px #ff7043;
+    }
+
+    .info {
+      text-align: center;
+      color: #333;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+
+    #order-animation {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .success-icon {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 6px solid #00e676;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: glow 1.2s ease-in-out infinite alternate;
+      position: relative;
+    }
+
+    .success-icon::before {
+      content: "✓";
+      font-size: 48px;
+      color: #00e676;
+      animation: pop 0.4s ease-out;
+    }
+
+    .success-text {
+      margin-top: 20px;
+      font-size: 22px;
+      color: #aaffaa;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 10px #00e676;
+        transform: scale(1);
+      }
+      to {
+        box-shadow: 0 0 25px #00ff95;
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes pop {
+      0% {
+        transform: scale(0.2);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Choose Payment Method</h1>
+
+    <div class="payment-option" id="Cash on Delivery" onclick="showPlaceOrder('Cash on Delivery')">
+      Cash on Delivery
+    </div>
+
+    <div class="payment-option" id="UPI" onclick="showPlaceOrder('UPI')">
+      UPI (PhonePe / GPay / Paytm)
+    </div>
+
+    <div id="selected-method">No payment method selected</div>
+
+    <button id="place-order" onclick="placeOrder()">Place Order</button>
+
+    <p class="info">Click a payment option to continue with your order.</p>
+  </div>
+
+  <div id="order-animation">
+    <div class="success-icon"></div>
+    <div class="success-text">Order Placed Successfully!</div>
+  </div>
+</body>
+</html>

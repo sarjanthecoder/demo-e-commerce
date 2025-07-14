@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Orders</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f2f8fb;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1ba2b2;
+    }
+
+    .order-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 700px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .order-details {
+      flex: 1;
+    }
+
+    .order-card img {
+      height: 80px;
+      width: auto;
+      border-radius: 8px;
+      margin-left: 20px;
+      object-fit: contain;
+    }
+
+    .order-info {
+      margin-bottom: 8px;
+    }
+
+    .order-info strong {
+      color: #333;
+    }
+
+    .status {
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📦 My Orders</h1>
+<div id="orders-container"></div>
+
+<script>
+  const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+  const container = document.getElementById("orders-container");
+
+  if (orders.length === 0) {
+    container.innerHTML = "<p style='text-align:center;'>No orders yet.</p>";
+  } else {
+    orders.reverse().forEach(order => {
+      const card = document.createElement("div");
+      card.className = "order-card";
+
+      card.innerHTML = `
+        <div class="order-details">
+          <div class="order-info"><strong>Product:</strong> ${order.name}</div>
+          <div class="order-info"><strong>Quantity:</strong> ${order.quantity}</div>
+          <div class="order-info"><strong>Price:</strong> ₹${order.price}</div>
+          <div class="order-info"><strong>Status:</strong> <span class="status">${order.status}</span></div>
+          <div class="order-info"><strong>ETA:</strong> ${order.eta}</div>
+          <div class="order-info"><strong>Ordered at:</strong> ${order.time}</div>
+        </div>
+        ${order.image ? `<img src="${order.image}" alt="Product">` : ""}
+      `;
+
+      container.appendChild(card);
+    });
+  }
+</script>
+
+</body>
+</html>

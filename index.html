@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E‑commerce App – Home</title>
+  <!-- Firebase (modular SDK) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged,
+      sendPasswordResetEmail,
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+    /********************
+     * CONFIG & GLOBALS *
+     ********************/
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYuHUvMwdLG4LyCQI7NicZQU3G1hmfG4I",
+      authDomain: "pwa-2-fec6b.firebaseapp.com",
+      projectId: "pwa-2-fec6b",
+      storageBucket: "pwa-2-fec6b.appspot.com",
+      messagingSenderId: "634581794768",
+      appId: "1:634581794768:web:979a7c0fe89217f11f43d5",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    let currentUser = null;
+
+    /****************
+     * PRODUCT DATA *
+     ****************/
+    const products = [
+      { id: 1, name: "Laptop Pro", price: 1299, image: "laptop3d.jpg", desc: "High‑performance laptop with 16‑inch Retina display and M‑series chip." },
+      { id: 2, name: "Phone Max", price: 999, image: "realme.jpg", desc: "Flagship smartphone featuring a stunning OLED display and triple‑lens camera." },
+      { id: 3, name: "Tablet Air", price: 699, image: "tablet.jpg", desc: "Lightweight tablet with stylus support – perfect for creatives on the go." },
+      { id: 4, name: "Smartwatch X", price: 349, image: "smartwatch.jpg", desc: "Sleek fitness‑focused smartwatch offering ECG, GPS, and 2‑day battery." },
+      { id: 5, name: "Noise‑Cancel Headphones", price: 299, image: "headphones.jpg", desc: "Over‑ear headphones with industry‑leading active noise cancellation." },
+      { id: 6, name: "Gaming Laptop", price: 1599, image: "gaming laptop.jpg", desc: "RGB‑lit powerhouse with RTX‑series GPU and 144 Hz display." },
+      { id: 7, name: "Budget Phone", price: 299, image: "iphone.jpg", desc: "Affordable Android device with impressive battery life." },
+      { id: 8, name: "Convertible Tablet", price: 799, image: "convertible.jpg", desc: "2‑in‑1 tablet/laptop hybrid with detachable keyboard." },
+      { id: 9, name: "Fitness Band", price: 79, image: "fitness band.jpg", desc: "Water‑resistant fitness tracker with SpO₂ monitoring." },
+      { id: 10, name: "Wireless Charger", price: 49, image: "wireless charger.jpg", desc: "Fast 15 W MagSafe‑compatible wireless charging pad." },
+      { id: 11, name: "Portable SSD 1 TB", price: 139, image: "1tbsd.jpg", desc: "Rugged USB‑C SSD with blazing‑fast 1050 MB/s read speeds." },
+      { id: 12, name: "4K Action Cam", price: 249, image: "canon.jpg", desc: "Compact action camera capturing 4K60 video with HyperSmooth." },
+      { id: 13, name: "Drone Mini", price: 499, image: "dj mini.jpg", desc: "Sub‑250 g drone with 4K camera and 30 min flight time." },
+      { id: 14, name: "Smart Speaker", price: 129, image: "smartspeaker.jpg", desc: "Voice‑controlled smart speaker with premium sound." },
+      { id: 15, name: "Mechanical Keyboard", price: 89, image: "keyboardf.jpg", desc: "Hot‑swappable RGB mechanical keyboard with tactile switches." },
+      { id: 16, name: "Ergonomic Mouse", price: 59, image: "mouse.jpg", desc: "Vertical ergonomic mouse to reduce wrist strain." },
+    ];
+
+    /*****************
+     * AUTH HANDLERS *
+     *****************/
+    window.signUp = async () => {
+      const email = document.getElementById("register-email").value;
+      const password = document.getElementById("register-password").value;
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        alert("Registration successful!");
+        closeAuthModal();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.login = async () => {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Login successful!");
+        closeAuthModal();
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.resetPassword = async () => {
+      const email = document.getElementById("reset-email").value;
+      try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Password reset email sent!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    window.logout = async () => {
+      try {
+        await signOut(auth);
+        alert("Logged out successfully!");
+        updateAuthUI(null);
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    };
+
+    function updateAuthUI(user) {
+      currentUser = user;
+      const authActions = document.getElementById("auth-actions");
+      if (user) {
+        authActions.innerHTML = `
+          <button onclick="location.href='orders.html'">Orders</button>
+          <button onclick="location.href='cart.html'">Cart</button>
+          <button onclick="logout()">Logout</button>
+          <span class="welcome">Hi, ${user.email}</span>
+        `;
+      } else {
+        authActions.innerHTML = `<button onclick="openAuthModal()">Login / Register</button>`;
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => updateAuthUI(user));
+
+    /*****************
+     * CART HANDLING *
+     *****************/
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    window.addToCart = (id) => {
+      if (!currentUser) return alert("Please log in first");
+      const product = products.find((p) => p.id === id);
+      if (!product) return;
+      const existing = cart.find((item) => item.id === id);
+      existing ? (existing.quantity += 1) : cart.push({ ...product, quantity: 1 });
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alert(`${product.name} added to cart!`);
+    };
+
+    /*******************
+     * RENDER PRODUCTS *
+     *******************/
+    function renderProducts() {
+      const list = document.getElementById("product-list");
+      list.innerHTML = products
+        .map(
+          (p) => `
+        <div class="product-card" data-id="${p.id}">
+          <img src="${p.image}" alt="${p.name}" />
+          <h3>${p.name}</h3>
+          <p>$${p.price}</p>
+          <button onclick="addToCart(${p.id})">Add to Cart</button>
+        </div>`
+        )
+        .join("");
+    }
+
+    /*******************
+     * DETAILS MODAL * *
+     *******************/
+    function openProductModal(product) {
+      const modal = document.getElementById("product-modal");
+      modal.querySelector("img").src = product.image;
+      modal.querySelector("h3").textContent = product.name;
+      modal.querySelector("p.desc").textContent = product.desc;
+      modal.querySelector("p.price").textContent = `$${product.price}`;
+      modal.style.display = "flex";
+    }
+
+    window.closeProductModal = () => {
+      document.getElementById("product-modal").style.display = "none";
+    };
+window.closeProductModal = () => {
+  document.getElementById("product-modal").style.display = "none";
+};
+
+window.openAuthModal = () => {
+  document.getElementById("auth-modal").style.display = "flex";
+};
+
+window.closeAuthModal = () => {
+  document.getElementById("auth-modal").style.display = "none";
+};
+
+    /***********************
+     * EVENT DELEGATION 🌟 *
+     ***********************/
+    document.addEventListener("DOMContentLoaded", () => {
+      renderProducts();
+
+      // Show details when image OR card clicked
+      document.getElementById("product-list").addEventListener("click", (e) => {
+        const card = e.target.closest(".product-card");
+        if (!card) return;
+        const id = parseInt(card.dataset.id);
+        const product = products.find((p) => p.id === id);
+        if (product) openProductModal(product);
+      });
+    });
+  </script>
+
+  <style>
+    /********************
+     * BASE TYPO & LAYOUT
+     ********************/
+    :root {
+      --primary: #00e5ff;
+      --primary-dark: #0089a4;
+      --accent: #ff9f00;
+      --radius: 0px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #ffffff, #ffffff);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 30px;
+      background: linear-gradient(to right, var(--primary), var(--primary-dark));
+      color: #fff;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    .nav-links button {
+      background: var(--accent);
+      border: none;
+      padding: 10px 15px;
+      border-radius: var(--radius);
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s ease;
+    }
+    .nav-links button:hover {
+      background: #d68600;
+    }
+    .welcome {
+      font-size: 0.85rem;
+      margin-left: 8px;
+      opacity: 0.85;
+    }
+
+    /****************
+     * PRODUCT GRID *
+     ****************/
+    .product-list {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr); /* 4 × 4 grid → 16 items */
+      gap: 25px;
+      padding: 40px;
+      flex: 1;
+    }
+    @media (max-width: 900px) {
+      .product-list {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 600px) {
+      .product-list {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .product-card {
+      background: #a3d7e4;
+      border-radius: var(--radius);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      text-align: center;
+      padding: 18px 15px 25px;
+      transition: transform 0.2s;
+      cursor: pointer;
+    }
+    .product-card:hover {
+      transform: translateY(-4px);
+    }
+    .product-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: var(--radius);
+    }
+    .product-card h3 {
+      margin: 15px 0 10px;
+      font-size: 18px;
+      color: #333;
+    }
+    .product-card p {
+      margin: 0 0 12px;
+      font-weight: bold;
+      color: #555;
+    }
+    .product-card button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      font-size: 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .product-card button:hover {
+      background: var(--primary-dark);
+    }
+
+    /******************
+     * AUTH & DETAILS *
+     ******************/
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: var(--radius);
+      width: 320px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 30px 24px 40px;
+      position: relative;
+    }
+    .modal-content button.close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      font-size: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Auth modal tweaks */
+    #auth-modal input {
+      width: 100%;
+      margin: 10px 0;
+      padding: 8px;
+    }
+    #auth-modal button:not(.close) {
+      width: 100%;
+      margin: 10px 0;
+    }
+
+    /* Product details modal */
+    #product-modal img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: var(--radius);
+    }
+    #product-modal h3 {
+      margin-top: 18px;
+      margin-bottom: 8px;
+      font-size: 20px;
+      color: #333;
+    }
+    #product-modal p.desc {
+      font-size: 14px;
+      line-height: 1.45;
+      color: #555;
+    }
+    #product-modal p.price {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 15px;
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <!-- 🔝 HEADER -->
+  <header>
+    <h1>E‑commerce App</h1>
+    <div id="auth-actions" class="nav-links"></div>
+  </header>
+
+  <!-- 🛒 PRODUCT GRID -->
+  <div id="product-list" class="product-list"></div>
+
+  <!-- 🔒 AUTH MODAL -->
+  <div id="auth-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close" onclick="closeAuthModal()">✖</button>
+
+      <h2 style="text-align:center;">Login</h2>
+      <input type="email" id="login-email" placeholder="Email" />
+      <input type="password" id="login-password" placeholder="Password" />
+      <button onclick="login()" style="background: var(--primary); color: #fff;">Login</button>
+
+      <hr />
+
+      <h2 style="text-align:center;">Register</h2>
+      <input type="email" id="register-email" placeholder="Email" />
+      <input type="password" id="register-password" placeholder="Password" />
+      <button onclick="signUp()" style="background: var(--accent); color: #fff;">Register</button>
+
+      <hr />
+
+      <h2 style="text-align:center;">Reset Password</h2>
+      <input type="email" id="reset-email" placeholder="Enter email to reset" />
+      <button onclick="resetPassword()" style="background: #555; color: #fff;">Reset Password</button>
+    </div>
+  </div>
+
+  <!-- 📦 PRODUCT DETAILS MODAL -->
+  <div id="product-modal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="close" onclick="closeProductModal()">✖</button>
+      <img src="" alt="Product image" />
+      <h3>Product Name</h3>
+      <p class="desc">Product description goes here...</p>
+      <p class="price">$0</p>
+      <button onclick="closeProductModal()" style="background: var(--accent); color: #fff; width: 100%; margin-top: 20px;">Close</button>
+    </div>
+  </div>
+</body>
+</html>

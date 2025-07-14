@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ecommerce-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    rootDir: electronics-ecommerce/BACKEND
+
+  - type: web
+    name: ecommerce-frontend
+    env: static
+    plan: free
+    buildCommand: ""
+    staticPublishPath: electronics-ecommerce/FRONTEND
