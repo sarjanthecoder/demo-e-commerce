@@ -1,35 +1,32 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const path = require("path");
 const twilio = require("twilio");
-require("dotenv").config(); // Load environment variables
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// ✅ Debug Twilio credentials loading
-console.log("✅ TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID ? "Loaded" : "Missing");
-console.log("✅ TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "Loaded" : "Missing");
-console.log("✅ TWILIO_PHONE_NUMBER:", process.env.TWILIO_PHONE_NUMBER ? "Loaded" : "Missing");
+// ✅ Serve static files (index.html, CSS, JS) from root
+app.use(express.static(__dirname));
 
-// ✅ Root route to fix "Cannot GET /"
+// ✅ Route for "/"
 app.get("/", (req, res) => {
-  res.send("✅ E-commerce Backend is running!");
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ✅ Twilio client
+// ✅ Twilio setup
+console.log("✅ TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID ? "Loaded" : "Missing");
+
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// ✅ /order route to send SMS
 app.post("/order", async (req, res) => {
   const { phone, message } = req.body;
 
   if (!phone || !message) {
-    return res.status(400).json({
-      success: false,
-      error: "Phone and message are required.",
-    });
+    return res.status(400).json({ success: false, error: "Phone and message are required." });
   }
 
   try {
@@ -52,7 +49,6 @@ app.post("/order", async (req, res) => {
   }
 });
 
-// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
