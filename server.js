@@ -2,21 +2,26 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const twilio = require("twilio");
-require("dotenv").config(); // ✅ Load .env variables
+require("dotenv").config(); // Load environment variables
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// ✅ Optional: Debug to verify .env is loading
+// ✅ Debug Twilio credentials loading
 console.log("✅ TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID ? "Loaded" : "Missing");
 console.log("✅ TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN ? "Loaded" : "Missing");
 console.log("✅ TWILIO_PHONE_NUMBER:", process.env.TWILIO_PHONE_NUMBER ? "Loaded" : "Missing");
 
-// ✅ Twilio client setup
+// ✅ Root route to fix "Cannot GET /"
+app.get("/", (req, res) => {
+  res.send("✅ E-commerce Backend is running!");
+});
+
+// ✅ Twilio client
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// ✅ Order endpoint - sends SMS
+// ✅ /order route to send SMS
 app.post("/order", async (req, res) => {
   const { phone, message } = req.body;
 
@@ -30,7 +35,7 @@ app.post("/order", async (req, res) => {
   try {
     const response = await client.messages.create({
       body: message,
-      from: process.env.TWILIO_PHONE_NUMBER, // ✅ Must be a verified or purchased Twilio number
+      from: process.env.TWILIO_PHONE_NUMBER,
       to: phone,
     });
 
